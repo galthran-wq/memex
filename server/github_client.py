@@ -9,6 +9,8 @@ import httpx
 
 API_BASE = "https://api.github.com"
 
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+
 
 @dataclass
 class UploadResult:
