@@ -7,12 +7,23 @@ async function init() {
   DATA = await resp.json();
   renderStats();
   renderFilters();
-  showView("list");
   renderList();
 
   document.getElementById("search").addEventListener("input", renderList);
   document.getElementById("filter-type").addEventListener("change", renderList);
   document.getElementById("filter-tag").addEventListener("change", renderList);
+
+  window.addEventListener("popstate", handleHash);
+  handleHash();
+}
+
+function handleHash() {
+  const hash = decodeURIComponent(location.hash.slice(1));
+  if (hash && DATA.entries.some((e) => e.path === hash)) {
+    showDetail(hash);
+  } else if (!hash) {
+    showView("list");
+  }
 }
 
 function renderStats() {
@@ -94,6 +105,10 @@ function showDetail(path) {
   const entry = DATA.entries.find((e) => e.path === path);
   if (!entry) return;
 
+  if (location.hash !== "#" + encodeURIComponent(path)) {
+    history.pushState(null, "", "#" + encodeURIComponent(path));
+  }
+
   showView("detail");
   const panel = document.getElementById("detail-content");
 
@@ -130,7 +145,7 @@ function showDetail(path) {
     : "";
 
   panel.innerHTML = `
-    <button class="back-btn" onclick="showView('list'); renderList();">← Back to list</button>
+    <button class="back-btn" onclick="history.pushState(null, '', location.pathname); showView('list'); renderList();">← Back to list</button>
     <h2>${esc(entry.title)}</h2>
     <div class="detail-meta">
       <span class="type-badge type-${entry.type}">${entry.type}</span>
@@ -149,6 +164,16 @@ function showDetail(path) {
       ${backlinksHtml}
     </div>
   `;
+
+  panel.querySelector(".detail-body").addEventListener("click", (e) => {
+    const a = e.target.closest("a");
+    if (!a) return;
+    const href = a.getAttribute("href");
+    if (href && href.startsWith("/knowledge/") && href.endsWith(".md")) {
+      e.preventDefault();
+      showDetail(href);
+    }
+  });
 
   if (typeof renderMathInElement === "function") {
     renderMathInElement(panel.querySelector(".detail-body"), {

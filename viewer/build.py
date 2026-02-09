@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -46,7 +47,8 @@ def build(repo_root: Path, output: Path) -> None:
     for entry in entries:
         body_html = ""
         if _md:
-            body_html = _md(entry.body)
+            body = re.sub(r'(?<!\$)\$\$(.+?)\$\$(?!\$)', r'\n$$\n\1\n$$\n', entry.body)
+            body_html = _md(body)
 
         entry_backlinks = backlinks.get(entry.path, [])
 
