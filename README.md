@@ -1,8 +1,8 @@
 # Memex
 
-Personal knowledge base as a GitHub template. An MCP server gives AI agents tools to search, read, and add knowledge. Writes go through [Cursor Cloud Agents](https://cursor.com/docs/cloud-agent) — a cloud agent reads your `.cursor/rules/`, creates properly formatted entries with cross-references, and opens a PR for you to review.
-
 ![Memex Architecture](docs/memex-architecture.png)
+
+Personal knowledge base as a GitHub template. An MCP server gives AI agents tools to search, read, and add knowledge. Writes go through [Cursor Cloud Agents](https://cursor.com/docs/cloud-agent) — a cloud agent reads your `.cursor/rules/`, creates properly formatted entries with cross-references, and opens a PR for you to review.
 
 ## How It Works
 
@@ -93,7 +93,9 @@ sources:
 
 A static site with entry list, filters, and interactive graph visualization.
 
-Deploy manually: go to Actions → **Deploy Knowledge Base Viewer** → Run workflow.
+Deploy automatically when a PR is merged into `master` that changes `knowledge/**` (also redeploys on `viewer/**` changes).
+
+Manual deploy: go to Actions → **Deploy Knowledge Base Viewer** → Run workflow.
 
 The viewer reads `knowledge/*.md`, builds a `data.json`, and deploys a single-page app with vis.js graph.
 

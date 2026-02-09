@@ -2,6 +2,20 @@ let DATA = null;
 let currentView = "list";
 let network = null;
 
+function basePath() {
+  const p = location.pathname || "/";
+  if (p.endsWith("/")) return p;
+  const i = p.lastIndexOf("/");
+  return i >= 0 ? p.slice(0, i + 1) : "/";
+}
+
+function withBaseIfAbsolutePath(p) {
+  if (!p || !p.startsWith("/")) return p;
+  const base = basePath();
+  if (base === "/") return p;
+  return base.replace(/\/$/, "") + p;
+}
+
 async function init() {
   const resp = await fetch("data.json");
   DATA = await resp.json();
@@ -164,6 +178,20 @@ function showDetail(path) {
       ${backlinksHtml}
     </div>
   `;
+
+  panel.querySelectorAll(".detail-body img").forEach((img) => {
+    const src = img.getAttribute("src");
+    if (src && src.startsWith("/knowledge/")) {
+      img.setAttribute("src", withBaseIfAbsolutePath(src));
+    }
+  });
+
+  panel.querySelectorAll(".detail-body a").forEach((a) => {
+    const href = a.getAttribute("href");
+    if (href && href.startsWith("/knowledge/") && !href.endsWith(".md")) {
+      a.setAttribute("href", withBaseIfAbsolutePath(href));
+    }
+  });
 
   panel.querySelector(".detail-body").addEventListener("click", (e) => {
     const a = e.target.closest("a");
