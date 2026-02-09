@@ -7,10 +7,8 @@ from pathlib import Path, PurePosixPath
 import httpx
 
 from server.config import load_config
-from server.github_client import GitHubClient, GitHubClientError
+from server.github_client import GitHubClient, GitHubClientError, IMAGE_EXTENSIONS
 from server.kb import KnowledgeBase
-
-IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
 
 
 def _make_kb() -> KnowledgeBase:

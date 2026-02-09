@@ -7,11 +7,9 @@ from mcp.server.fastmcp import FastMCP
 
 from server.config import Config
 from server.cursor_client import CursorClient, CursorClientError
-from server.github_client import GitHubClient, GitHubClientError
+from server.github_client import GitHubClient, GitHubClientError, IMAGE_EXTENSIONS
 from server.kb import KnowledgeBase
 from server.prompt import build_prompt
-
-IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
 
 
 def register_tools(mcp: FastMCP, kb: KnowledgeBase, config: Config) -> None:
@@ -184,12 +182,12 @@ def register_tools(mcp: FastMCP, kb: KnowledgeBase, config: Config) -> None:
         target_branch = branch or config.github.default_branch
 
         images: list[str] = []
-        if branch and config.memex_git_token:
+        if target_branch and config.memex_git_token:
             gh = GitHubClient(
                 config.memex_git_token, config.github.owner, config.github.repo
             )
             try:
-                images = gh.list_directory(config.knowledge.assets_dir, branch)
+                images = gh.list_directory(config.knowledge.assets_dir, target_branch)
             except GitHubClientError:
                 pass
             finally:
