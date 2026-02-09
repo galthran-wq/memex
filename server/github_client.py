@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import time
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
@@ -39,15 +40,32 @@ class GitHubClient:
     def _repo_prefix(self) -> str:
         return f"{API_BASE}/repos/{self._owner}/{self._repo}"
 
+    def _request(
+        self,
+        method: str,
+        url: str,
+        max_retries: int = 3,
+        **kwargs,
+    ) -> httpx.Response:
+        for attempt in range(max_retries + 1):
+            resp = self._http.request(method, url, **kwargs)
+            if resp.status_code != 429:
+                return resp
+            if attempt == max_retries:
+                return resp
+            retry_after = int(resp.headers.get("Retry-After", "5"))
+            time.sleep(min(retry_after, 60))
+        return resp
+
     def ensure_branch(self, branch: str, base: str = "main") -> str:
-        resp = self._http.get(
-            f"{self._repo_prefix}/git/ref/heads/{branch}"
+        resp = self._request(
+            "GET", f"{self._repo_prefix}/git/ref/heads/{branch}"
         )
         if resp.status_code == 200:
             return resp.json()["object"]["sha"]
 
-        base_resp = self._http.get(
-            f"{self._repo_prefix}/git/ref/heads/{base}"
+        base_resp = self._request(
+            "GET", f"{self._repo_prefix}/git/ref/heads/{base}"
         )
         if base_resp.status_code != 200:
             raise GitHubClientError(
@@ -55,8 +73,8 @@ class GitHubClient:
             )
         base_sha = base_resp.json()["object"]["sha"]
 
-        create_resp = self._http.post(
-            f"{self._repo_prefix}/git/refs",
+        create_resp = self._request(
+            "POST", f"{self._repo_prefix}/git/refs",
             json={"ref": f"refs/heads/{branch}", "sha": base_sha},
         )
         if create_resp.status_code not in (200, 201):
@@ -89,8 +107,8 @@ class GitHubClient:
         if existing_sha:
             payload["sha"] = existing_sha
 
-        resp = self._http.put(
-            f"{self._repo_prefix}/contents/{repo_path}",
+        resp = self._request(
+            "PUT", f"{self._repo_prefix}/contents/{repo_path}",
             json=payload,
         )
         if resp.status_code not in (200, 201):
@@ -107,8 +125,8 @@ class GitHubClient:
         )
 
     def list_directory(self, dir_path: str, branch: str) -> list[str]:
-        resp = self._http.get(
-            f"{self._repo_prefix}/contents/{dir_path}",
+        resp = self._request(
+            "GET", f"{self._repo_prefix}/contents/{dir_path}",
             params={"ref": branch},
         )
         if resp.status_code == 404:
@@ -123,8 +141,8 @@ class GitHubClient:
         return [item["path"] for item in data if item["type"] == "file"]
 
     def _get_file_sha(self, repo_path: str, branch: str) -> str | None:
-        resp = self._http.get(
-            f"{self._repo_prefix}/contents/{repo_path}",
+        resp = self._request(
+            "GET", f"{self._repo_prefix}/contents/{repo_path}",
             params={"ref": branch},
         )
         if resp.status_code == 200:
